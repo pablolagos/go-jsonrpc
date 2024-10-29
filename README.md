@@ -5,10 +5,10 @@
 ![Last Commit](https://img.shields.io/github/last-commit/pablolagos/go-jsonrpc)
 ![Go Report Card](https://goreportcard.com/badge/github.com/pablolagos/go-jsonrpc)
 
-[![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
+![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
 ![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
 ![Forks](https://img.shields.io/github/forks/pablolagos/go-jsonrpc?style=social)
-![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://pkg.go.dev/github.com/pablolagos/go-jsonrpc)
+[![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://pkg.go.dev/github.com/pablolagos/go-jsonrpc)
 
 
 # go_jsonrpc
