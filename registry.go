@@ -1,30 +1,33 @@
+// registry.go
 package go_jsonrpc
 
-type Command struct {
-	Handler     HandlerFunc
-	Middlewares []MiddlewareFunc
+type command struct {
+	handler     HandlerFunc
+	middlewares []MiddlewareFunc
 }
 
 type JsRPC struct {
-	handlers    map[string]Command
+	handlers    map[string]command
 	middlewares []MiddlewareFunc // Global middlewares
+	cgi         bool             // Flag to write CGI headers
 }
 
-type HandlerFunc func(ctx *Context) // No error return value
-
+type HandlerFunc func(ctx *Context)
 type MiddlewareFunc func(ctx *Context) error
 
-func NewRegistry() *JsRPC {
+// New creates a new instance of JsRPC with a flag to control CGI header output
+func New(cgi bool) *JsRPC {
 	return &JsRPC{
-		handlers: make(map[string]Command),
+		handlers: make(map[string]command),
+		cgi:      cgi,
 	}
 }
 
-// RegisterCommand allows registering a command with optional middlewares
-func (r *JsRPC) RegisterCommand(command string, handler HandlerFunc, middlewares ...MiddlewareFunc) {
-	r.handlers[command] = Command{
-		Handler:     handler,
-		Middlewares: middlewares,
+// RegisterCommand registers a command with optional middlewares
+func (r *JsRPC) RegisterCommand(commandName string, handler HandlerFunc, middlewares ...MiddlewareFunc) {
+	r.handlers[commandName] = command{
+		handler:     handler,
+		middlewares: middlewares,
 	}
 }
 
