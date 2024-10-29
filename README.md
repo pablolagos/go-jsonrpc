@@ -8,7 +8,7 @@
 [![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
 ![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
 ![Forks](https://img.shields.io/github/forks/pablolagos/go-jsonrpc?style=social)
-![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://pkg.go.dev/github.com/pablolagos/go_jsonrpc)
+![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://pkg.go.dev/github.com/pablolagos/go-jsonrpc)
 
 
 # go_jsonrpc
