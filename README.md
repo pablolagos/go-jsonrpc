@@ -1,3 +1,16 @@
+![Go Version](https://img.shields.io/github/go-mod/go-version/pablolagos/go-jsonrpc)
+![License](https://img.shields.io/github/license/pablolagos/go-jsonrpc)
+![Issues](https://img.shields.io/github/issues/pablolagos/go-jsonrpc)
+![Code Size](https://img.shields.io/github/languages/code-size/pablolagos/go-jsonrpc)
+![Last Commit](https://img.shields.io/github/last-commit/pablolagos/go-jsonrpc)
+![Go Report Card](https://goreportcard.com/badge/github.com/pablolagos/go-jsonrpc)
+
+[![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
+![Stars](https://img.shields.io/github/stars/pablolagos/go-jsonrpc?style=social)
+![Forks](https://img.shields.io/github/forks/pablolagos/go-jsonrpc?style=social)
+![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://pkg.go.dev/github.com/pablolagos/go_jsonrpc)
+
+
 # go_jsonrpc
 
 **go_jsonrpc** is a lightweight and flexible library for building JSON-RPC 2.0 APIs in Go. Designed with simplicity and modularity in mind, it provides everything needed to set up and manage commands, middleware, and CGI headers for diverse environments. It also supports parameter extraction, type-safe binding, and shared data between middlewares and handlers.
