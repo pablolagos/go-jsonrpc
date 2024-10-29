@@ -29,7 +29,7 @@
 To install **go_jsonrpc**, you can use `go get`:
 
 ```sh
-go get github.com/pablolagos/go_jsonrpc
+go get github.com/pablolagos/go-jsonrpc
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ package main
 import (
     "fmt"
     "os"
-    "github.com/pablolagos/go_jsonrpc"
+    "github.com/pablolagos/go-jsonrpc"
 )
 
 // UserInfo represents a struct for binding JSON parameters
