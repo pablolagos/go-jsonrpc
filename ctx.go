@@ -3,6 +3,7 @@ package go_jsonrpc
 import (
 	"encoding/json"
 	"io"
+	"log"
 )
 
 type Context struct {
@@ -11,6 +12,7 @@ type Context struct {
 	Response interface{}    // The response to be sent
 	writer   io.Writer      // Writer for the response
 	data     map[string]any // To store shared data between middleware and handlers
+	Logger   *log.Logger    // Logger available for handlers and middlewares
 }
 
 // JSON writes a JSON response to the writer

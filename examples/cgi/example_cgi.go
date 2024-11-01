@@ -2,8 +2,10 @@ package cgi
 
 import (
 	"fmt"
-	"github.com/pablolagos/go-jsonrpc"
+	"log"
 	"os"
+
+	"github.com/pablolagos/go-jsonrpc"
 )
 
 // UserInfo represents a struct for binding JSON parameters
@@ -16,7 +18,7 @@ type UserInfo struct {
 
 func main() {
 	// Create an instance of JsRPC with the CGI flag set to true to write CGI headers
-	jsrpc := go_jsonrpc.New(true)
+	jsrpc := go_jsonrpc.New(&go_jsonrpc.Options{CGI: true})
 
 	// Global middleware to add a request ID to the context
 	jsrpc.UseGlobalMiddleware(func(ctx *go_jsonrpc.Context) error {
@@ -27,7 +29,7 @@ func main() {
 	})
 
 	// Register a "sum" command that adds two numbers using GetParamFloat
-	jsrpc.RegisterCommand("sum", func(ctx *go_jsonrpc.Context) {
+	jsrpc.RegisterCommand("sum", func(ctx *go_jsonrpc.Context) error {
 		// Retrieve individual parameters using GetParamFloat
 		a := ctx.GetParamFloat("a", 0.0)
 		b := ctx.GetParamFloat("b", 0.0)
@@ -36,23 +38,22 @@ func main() {
 		requestID := ctx.GetData("request_id")
 
 		// Perform the operation and return the response
-		ctx.JSON(map[string]interface{}{
+		return ctx.JSON(map[string]interface{}{
 			"request_id": requestID,
 			"result":     a + b,
 		})
 	})
 
 	// Register a "getUserInfo" command that binds JSON parameters to a struct
-	jsrpc.RegisterCommand("getUserInfo", func(ctx *go_jsonrpc.Context) {
+	jsrpc.RegisterCommand("getUserInfo", func(ctx *go_jsonrpc.Context) error {
 		// Use Bind to parse parameters into a UserInfo struct
 		var userInfo UserInfo
 		if err := ctx.Bind(&userInfo); err != nil {
-			ctx.Error(fmt.Errorf("failed to bind parameters: %v", err))
-			return
+			return ctx.Error(fmt.Errorf("failed to bind parameters: %v", err))
 		}
 
 		// Return the bound user information as a JSON response
-		ctx.JSON(map[string]interface{}{
+		return ctx.JSON(map[string]interface{}{
 			"user_id": userInfo.ID,
 			"name":    userInfo.Name,
 			"active":  userInfo.Active,
@@ -62,6 +63,6 @@ func main() {
 
 	// Execute the command using os.Stdin and os.Stdout as input and output (for CGI)
 	if err := jsrpc.ExecuteCommand(os.Stdin, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 	}
 }

@@ -1,3 +1,4 @@
+// protocol.go
 package go_jsonrpc
 
 // JSONRPCRequest represents a standard JSON-RPC 2.0 request
@@ -24,7 +25,7 @@ type JSONRPCError struct {
 }
 
 // Error codes according to JSON-RPC 2.0
-var (
+const (
 	ParseError     = -32700
 	InvalidRequest = -32600
 	MethodNotFound = -32601

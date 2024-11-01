@@ -3,68 +3,101 @@ package go_jsonrpc
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 )
+
+// StartServer listens on a TCP port or Unix socket and executes JSON-RPC commands
+func (r *JsRPC) StartServer(address string, useUnixSocket bool) error {
+	var listener net.Listener
+	var err error
+
+	// Select TCP or Unix socket based on the configuration
+	if useUnixSocket {
+		listener, err = net.Listen("unix", address)
+	} else {
+		listener, err = net.Listen("tcp", address)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to listen on %s: %v", address, err)
+	}
+	defer listener.Close()
+
+	r.logger.Printf("Server listening on %s", address)
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			r.logger.Printf("Failed to accept connection: %v", err)
+			continue
+		}
+		go r.handleConnection(conn)
+	}
+}
+
+// handleConnection reads from a connection, processes the JSON-RPC request, and writes the response
+func (r *JsRPC) handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	// Execute command from connection
+	if err := r.ExecuteCommand(conn, conn); err != nil {
+		r.logger.Printf("Error processing request: %v", err)
+	}
+}
 
 // ExecuteCommand reads from io.Reader, processes the JSON-RPC request, and writes the response to io.Writer
 func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 	var rpcRequest JSONRPCRequest
 
 	if err := json.NewDecoder(reader).Decode(&rpcRequest); err != nil {
-		return writeError(writer, nil, ParseError, "Invalid JSON", nil, r.cgi)
-	}
-
-	// Validate JSON-RPC version
-	if rpcRequest.JSONRPC != "2.0" {
-		return writeError(writer, rpcRequest.ID, InvalidRequest, "Invalid JSON-RPC version", nil, r.cgi)
+		r.logger.Printf("Invalid JSON: %v", err)
+		return nil
 	}
 
 	command, exists := r.handlers[rpcRequest.Method]
 	if !exists {
-		return writeError(writer, rpcRequest.ID, MethodNotFound, "Method not found", nil, r.cgi)
+		r.logger.Printf("Method not found: %s", rpcRequest.Method)
+		return nil
 	}
 
 	ctx := &Context{
 		Method: rpcRequest.Method,
 		Params: rpcRequest.Params,
 		writer: writer,
+		Logger: r.logger,
 	}
 
 	// Execute global middlewares
 	for _, middleware := range r.middlewares {
 		if err := middleware(ctx); err != nil {
-			return writeError(writer, rpcRequest.ID, InternalError, "Global middleware error", err, r.cgi)
+			// Stop execution if a global middleware returns an error
+			return nil
 		}
 	}
 
 	// Execute command-specific middlewares
 	for _, middleware := range command.middlewares {
 		if err := middleware(ctx); err != nil {
-			return writeError(writer, rpcRequest.ID, InternalError, "Command-specific middleware error", err, r.cgi)
+			// Stop execution if a command-specific middleware returns an error
+			return nil
 		}
 	}
 
-	// Execute handler
-	command.handler(ctx)
-
-	// Handle successful response
-	return writeResponse(writer, rpcRequest.ID, ctx.Response, r.cgi)
-}
-
-// writeHeaders writes the necessary HTTP headers for a CGI response if cgi is true
-func writeHeaders(writer io.Writer, cgi bool) error {
-	if cgi {
-		headers := "Content-Type: application/json\r\n\r\n"
-		_, err := writer.Write([]byte(headers))
-		return err
+	// Execute handler and log any returned error
+	if err := command.handler(ctx); err != nil {
+		r.logger.Printf("Handler error: %v", err)
+		return nil
 	}
+
 	return nil
 }
 
-// writeError writes a JSON-RPC 2.0 error response with CGI headers if cgi is true
+// writeError writes a JSON-RPC 2.0 error response
 func writeError(writer io.Writer, id interface{}, code int, message string, data interface{}, cgi bool) error {
-	if err := writeHeaders(writer, cgi); err != nil {
-		return err
+	if cgi {
+		headers := "Content-Type: application/json\r\n\r\n"
+		writer.Write([]byte(headers))
 	}
 	return json.NewEncoder(writer).Encode(JSONRPCResponse{
 		JSONRPC: "2.0",
@@ -77,10 +110,11 @@ func writeError(writer io.Writer, id interface{}, code int, message string, data
 	})
 }
 
-// writeResponse writes a JSON-RPC 2.0 successful response with CGI headers if cgi is true
+// writeResponse writes a JSON-RPC 2.0 successful response
 func writeResponse(writer io.Writer, id interface{}, result interface{}, cgi bool) error {
-	if err := writeHeaders(writer, cgi); err != nil {
-		return err
+	if cgi {
+		headers := "Content-Type: application/json\r\n\r\n"
+		writer.Write([]byte(headers))
 	}
 	return json.NewEncoder(writer).Encode(JSONRPCResponse{
 		JSONRPC: "2.0",
