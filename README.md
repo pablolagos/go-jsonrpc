@@ -11,176 +11,237 @@
 [![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://pkg.go.dev/github.com/pablolagos/go-jsonrpc)
 
 
-# go_jsonrpc
+# Go JSON-RPC
 
-**go_jsonrpc** is a lightweight and flexible library for building JSON-RPC 2.0 APIs in Go. Designed with simplicity and modularity in mind, it provides everything needed to set up and manage commands, middleware, and CGI headers for diverse environments. It also supports parameter extraction, type-safe binding, and shared data between middlewares and handlers.
+A versatile and lightweight JSON-RPC 2.0 server implementation in Go, designed to handle JSON-RPC requests over TCP, Unix sockets, CGI, and HTTP. It provides a full set of helper functions to register commands, handle middlewares, and work with JSON-RPC data in a flexible and customizable way.
 
 ## Features
 
-- **JSON-RPC 2.0 Compatibility**: Full support for JSON-RPC 2.0 requests and responses.
-- **Middleware Support**: Global and command-specific middlewares for flexible request handling.
-- **Parameter Extraction**: Easily retrieve parameters with type safety.
-- **Struct Binding**: Use `Bind` to convert JSON parameters to custom Go structs.
-- **CGI Support**: Optional CGI headers for running in environments that require HTTP-like responses.
-- **Shared Context Data**: Share information between middlewares and handlers using `SetData` and `GetData`.
+- **Multiple transport protocols**: TCP, Unix sockets, CGI, and HTTP.
+- **Middleware support**: Easily add global or command-specific middlewares.
+- **Helper functions**: Simplify request handling, parameter retrieval, and response management.
+- **Flexible configuration**: Customize logging, error handling, and server options.
 
 ## Installation
 
-To install **go_jsonrpc**, you can use `go get`:
+To install this package, use:
 
-```sh
+```bash
 go get github.com/pablolagos/go-jsonrpc
 ```
 
 ## Usage
 
-Here's a quick example to get you started. This example demonstrates how to:
-1. Create an instance of `JsRPC`.
-2. Set up global and command-specific middleware.
-3. Register commands that use parameter extraction, `Bind`, and shared context data.
-4. Execute commands and produce JSON-RPC responses.
+### Basic Server Setup (TCP and Unix Sockets)
 
-### Example
+#### 1. TCP Server Example
 
 ```go
 package main
 
 import (
-    "fmt"
+    "errors"
+    "log"
     "os"
     "github.com/pablolagos/go-jsonrpc"
 )
 
-// UserInfo represents a struct for binding JSON parameters
-type UserInfo struct {
-    ID     int      `json:"id"`
-    Name   string   `json:"name"`
-    Active bool     `json:"active"`
-    Roles  []string `json:"roles"`
-}
-
 func main() {
-    // Create an instance of JsRPC with CGI headers enabled
-    jsrpc := go_jsonrpc.New(true)
+    options := &go_jsonrpc.Options{
+        CGI:    false,
+        Logger: log.New(os.Stdout, "JSON-RPC TCP Server: ", log.LstdFlags),
+    }
 
-    // Global middleware to add a request ID to the context
-    jsrpc.UseGlobalMiddleware(func(ctx *go_jsonrpc.Context) error {
-        ctx.SetData("request_id", 1001)
-        fmt.Println("Global middleware executed")
+    jsrpc := go_jsonrpc.New(options)
+
+    // Register a command
+    jsrpc.RegisterCommand("add", func(ctx *go_jsonrpc.Context) error {
+        a := ctx.GetParamFloat("a", 0.0)
+        b := ctx.GetParamFloat("b", 0.0)
+        result := a + b
+        ctx.JSON(map[string]interface{}{"result": result})
         return nil
     })
 
-    // Register a "sum" command that uses GetParamFloat
-    jsrpc.RegisterCommand("sum", func(ctx *go_jsonrpc.Context) {
-        a := ctx.GetParamFloat("a", 0.0)
-        b := ctx.GetParamFloat("b", 0.0)
-        requestID := ctx.GetData("request_id")
-
-        ctx.JSON(map[string]interface{}{
-            "request_id": requestID,
-            "result":     a + b,
-        })
-    })
-
-    // Register a "getUserInfo" command that binds JSON parameters to a struct
-    jsrpc.RegisterCommand("getUserInfo", func(ctx *go_jsonrpc.Context) {
-        var userInfo UserInfo
-        if err := ctx.Bind(&userInfo); err != nil {
-            ctx.Error(fmt.Errorf("failed to bind parameters: %v", err))
-            return
-        }
-
-        ctx.JSON(map[string]interface{}{
-            "user_id": userInfo.ID,
-            "name":    userInfo.Name,
-            "active":  userInfo.Active,
-            "roles":   userInfo.Roles,
-        })
-    })
-
-    // Execute the command using os.Stdin and os.Stdout (for CGI environments)
-    if err := jsrpc.ExecuteCommand(os.Stdin, os.Stdout); err != nil {
-        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+    // Start the server on a TCP port
+    address := ":12345"
+    log.Printf("Starting server on %s\n", address)
+    if err := jsrpc.StartServer(address, false); err != nil {
+        log.Fatalf("Failed to start server: %v\n", err)
     }
 }
 ```
 
-### Example JSON-RPC Requests
+#### 2. Unix Socket Example
 
-#### Request for `sum` Command
+```go
+package main
 
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "sum",
-  "params": { "a": 10.5, "b": 5.5 },
-  "id": 1
+import (
+    "errors"
+    "log"
+    "os"
+    "github.com/pablolagos/go-jsonrpc"
+)
+
+func main() {
+    options := &go_jsonrpc.Options{
+        CGI:    false,
+        Logger: log.New(os.Stdout, "JSON-RPC Unix Socket Server: ", log.LstdFlags),
+    }
+
+    jsrpc := go_jsonrpc.New(options)
+
+    jsrpc.UseGlobalMiddleware(func(ctx *go_jsonrpc.Context) error {
+        authToken := ctx.GetParamString("authToken", "")
+        if authToken != "secret" {
+            return errors.New("unauthorized access")
+        }
+        return nil
+    })
+
+    jsrpc.RegisterCommand("multiply", func(ctx *go_jsonrpc.Context) error {
+        a := ctx.GetParamFloat("a", 1.0)
+        b := ctx.GetParamFloat("b", 1.0)
+        result := a * b
+        ctx.JSON(map[string]interface{}{"result": result})
+        return nil
+    })
+
+    socketPath := "/tmp/jsonrpc.sock"
+    if _, err := os.Stat(socketPath); err == nil {
+        os.Remove(socketPath)
+    }
+
+    log.Printf("Starting server on Unix socket %s\n", socketPath)
+    if err := jsrpc.StartServer(socketPath, true); err != nil {
+        log.Fatalf("Failed to start server: %v\n", err)
+    }
 }
 ```
 
-#### Response
+### CGI Example
 
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "request_id": 1001,
-    "result": 16.0
-  },
-  "id": 1
+When running in a CGI environment, the library can automatically handle JSON-RPC requests by reading from `os.Stdin` and writing responses to `os.Stdout`.
+
+```go
+package main
+
+import (
+    "log"
+    "os"
+    "github.com/pablolagos/go-jsonrpc"
+)
+
+func main() {
+    options := &go_jsonrpc.Options{
+        CGI:    true, // Enables CGI headers
+        Logger: log.New(os.Stdout, "JSON-RPC CGI Server: ", log.LstdFlags),
+    }
+
+    jsrpc := go_jsonrpc.New(options)
+
+    jsrpc.RegisterCommand("subtract", func(ctx *go_jsonrpc.Context) error {
+        a := ctx.GetParamFloat("a", 0.0)
+        b := ctx.GetParamFloat("b", 0.0)
+        result := a - b
+        ctx.JSON(map[string]interface{}{"result": result})
+        return nil
+    })
+
+    if err := jsrpc.ExecuteCommand(os.Stdin, os.Stdout); err != nil {
+        log.Fatalf("Error processing CGI request: %v", err)
+    }
 }
 ```
 
-#### Request for `getUserInfo` Command
+### HTTP Server Example
 
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "getUserInfo",
-  "params": {
-    "id": 42,
-    "name": "Alice",
-    "active": true,
-    "roles": ["admin", "user"]
-  },
-  "id": 2
+To run the server over HTTP, use Go's `net/http` package alongside the JSON-RPC library.
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+    "github.com/pablolagos/go-jsonrpc"
+)
+
+func main() {
+    options := &go_jsonrpc.Options{
+        CGI:    false,
+        Logger: log.New(os.Stdout, "JSON-RPC HTTP Server: ", log.LstdFlags),
+    }
+
+    jsrpc := go_jsonrpc.New(options)
+
+    jsrpc.RegisterCommand("divide", func(ctx *go_jsonrpc.Context) error {
+        a := ctx.GetParamFloat("a", 1.0)
+        b := ctx.GetParamFloat("b", 1.0)
+        if b == 0 {
+            return ctx.Error("division by zero")
+        }
+        result := a / b
+        ctx.JSON(map[string]interface{}{"result": result})
+        return nil
+    })
+
+    http.HandleFunc("/rpc", func(w http.ResponseWriter, r *http.Request) {
+        jsrpc.ExecuteCommand(r.Body, w)
+    })
+
+    log.Println("Starting HTTP server on :8080")
+    if err := http.ListenAndServe(":8080", nil); err != nil {
+        log.Fatalf("Failed to start HTTP server: %v", err)
+    }
 }
 ```
 
-#### Response
+## Middleware Example
 
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "user_id": 42,
-    "name": "Alice",
-    "active": true,
-    "roles": ["admin", "user"]
-  },
-  "id": 2
+Middlewares can be applied globally or specifically for individual commands. Note: If a middleware encounters an error, it is responsible for handling client responses as needed.
+
+```go
+package main
+
+import (
+    "errors"
+    "log"
+    "os"
+    "github.com/pablolagos/go-jsonrpc"
+)
+
+func main() {
+    options := &go_jsonrpc.Options{
+        Logger: log.New(os.Stdout, "JSON-RPC Server with Middleware: ", log.LstdFlags),
+    }
+
+    jsrpc := go_jsonrpc.New(options)
+
+    jsrpc.UseGlobalMiddleware(func(ctx *go_jsonrpc.Context) error {
+        token := ctx.GetParamString("token", "")
+        if token != "valid_token" {
+            ctx.JSON(map[string]interface{}{"error": "unauthorized access"})
+            return errors.New("unauthorized access")
+        }
+        return nil
+    })
+
+    jsrpc.RegisterCommand("echo", func(ctx *go_jsonrpc.Context) error {
+        message := ctx.GetParamString("message", "")
+        ctx.JSON(map[string]interface{}{"message": message})
+        return nil
+    })
+
+    address := ":12345"
+    log.Printf("Starting server on %s\n", address)
+    if err := jsrpc.StartServer(address, false); err != nil {
+        log.Fatalf("Failed to start server: %v\n", err)
+    }
 }
 ```
-
-## API Reference
-
-#### New(cgi bool) *JsRPC
-Creates a new `JsRPC` instance. If `cgi` is set to `true`, CGI headers will be included in responses.
-
-#### RegisterCommand(commandName string, handler HandlerFunc, middlewares ...MiddlewareFunc)
-Registers a new command with optional specific middlewares.
-
-#### UseGlobalMiddleware(middleware MiddlewareFunc)
-Adds a global middleware that will apply to all commands.
-
-#### ExecuteCommand(reader io.Reader, writer io.Writer) error
-Reads a JSON-RPC request from `reader`, processes it, and writes the response to `writer`. It includes CGI headers if `cgi` is set to `true`.
-
-## Contributing
-
-Feel free to open issues or pull requests if you have any improvements, suggestions, or bug fixes! Contributions are always welcome.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
