@@ -95,33 +95,3 @@ func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 
 	return nil
 }
-
-// writeError writes a JSON-RPC 2.0 error response
-func writeError(writer io.Writer, id interface{}, code int, message string, data interface{}, cgi bool) error {
-	if cgi {
-		headers := "Content-Type: application/json\r\n\r\n"
-		writer.Write([]byte(headers))
-	}
-	return json.NewEncoder(writer).Encode(JSONRPCResponse{
-		JSONRPC: "2.0",
-		Error: &JSONRPCError{
-			Code:    code,
-			Message: message,
-			Data:    data,
-		},
-		ID: id,
-	})
-}
-
-// writeResponse writes a JSON-RPC 2.0 successful response
-func writeResponse(writer io.Writer, id interface{}, result interface{}, cgi bool) error {
-	if cgi {
-		headers := "Content-Type: application/json\r\n\r\n"
-		writer.Write([]byte(headers))
-	}
-	return json.NewEncoder(writer).Encode(JSONRPCResponse{
-		JSONRPC: "2.0",
-		Result:  result,
-		ID:      id,
-	})
-}

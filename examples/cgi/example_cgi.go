@@ -49,7 +49,7 @@ func main() {
 		// Use Bind to parse parameters into a UserInfo struct
 		var userInfo UserInfo
 		if err := ctx.Bind(&userInfo); err != nil {
-			return ctx.Error(fmt.Errorf("failed to bind parameters: %v", err))
+			return ctx.Error(500, fmt.Errorf("failed to bind parameters: %v", err))
 		}
 
 		// Return the bound user information as a JSON response
