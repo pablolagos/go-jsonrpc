@@ -59,8 +59,7 @@ func main() {
         a := ctx.GetParamFloat("a", 0.0)
         b := ctx.GetParamFloat("b", 0.0)
         result := a + b
-        ctx.JSON(map[string]interface{}{"result": result})
-        return nil
+        return ctx.JSON(result)
     })
 
     // Start the server on a TCP port
@@ -104,7 +103,7 @@ func main() {
         a := ctx.GetParamFloat("a", 1.0)
         b := ctx.GetParamFloat("b", 1.0)
         result := a * b
-        ctx.JSON(map[string]interface{}{"result": result})
+        ctx.JSON(result)
         return nil
     })
 
@@ -145,8 +144,7 @@ func main() {
         a := ctx.GetParamFloat("a", 0.0)
         b := ctx.GetParamFloat("b", 0.0)
         result := a - b
-        ctx.JSON(map[string]interface{}{"result": result})
-        return nil
+        return ctx.JSON(result)
     })
 
     if err := jsrpc.ExecuteCommand(os.Stdin, os.Stdout); err != nil {
@@ -180,11 +178,10 @@ func main() {
         a := ctx.GetParamFloat("a", 1.0)
         b := ctx.GetParamFloat("b", 1.0)
         if b == 0 {
-            return ctx.Error("division by zero")
+            return ctx.ErrorString(400,"division by zero")
         }
         result := a / b
-        ctx.JSON(map[string]interface{}{"result": result})
-        return nil
+        return ctx.JSON(result)
     })
 
     http.HandleFunc("/rpc", func(w http.ResponseWriter, r *http.Request) {
@@ -222,16 +219,15 @@ func main() {
     jsrpc.UseGlobalMiddleware(func(ctx *go_jsonrpc.Context) error {
         token := ctx.GetParamString("token", "")
         if token != "valid_token" {
-            ctx.JSON(map[string]interface{}{"error": "unauthorized access"})
-            return errors.New("unauthorized access")
+            ctx.ErrorString(412, "unauthorized access")
+            return errors.New("unauthorized access") // Return an error to stop command execution
         }
         return nil
     })
 
     jsrpc.RegisterCommand("echo", func(ctx *go_jsonrpc.Context) error {
         message := ctx.GetParamString("message", "")
-        ctx.JSON(map[string]interface{}{"message": message})
-        return nil
+        return ctx.JSON(message)
     })
 
     address := ":12345"

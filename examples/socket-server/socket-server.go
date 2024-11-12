@@ -8,6 +8,8 @@ import (
 	"github.com/pablolagos/go-jsonrpc"
 )
 
+const BadRequest = 400
+
 func main() {
 	// Define custom options to use a Unix socket and set a custom logger
 	options := &go_jsonrpc.Options{
@@ -41,7 +43,7 @@ func main() {
 		// Command-specific middleware: Check if parameter "a" is positive
 		a := ctx.GetParamFloat("a", 1.0)
 		if a <= 0 {
-			_ = ctx.Error(errors.New("parameter 'a' must be positive"))
+			_ = ctx.Error(BadRequest, errors.New("parameter 'a' must be positive"))
 			return errors.New("parameter 'a' must be positive")
 		}
 		return nil

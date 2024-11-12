@@ -1,8 +1,6 @@
 // registry.go
 package go_jsonrpc
 
-import "log"
-
 // command represents a registered command with its handler and specific middlewares.
 type command struct {
 	handler     HandlerFunc
@@ -14,7 +12,7 @@ type JsRPC struct {
 	handlers    map[string]command
 	middlewares []MiddlewareFunc // Global middlewares
 	cgi         bool             // Flag to write CGI headers
-	logger      *log.Logger      // Logger for logging critical events
+	logger      Logger           // Logger for logging critical events
 }
 
 // HandlerFunc is the type definition for the function signature of a command handler.

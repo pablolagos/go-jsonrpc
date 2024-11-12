@@ -8,6 +8,11 @@ import (
 	"net"
 )
 
+type Logger interface {
+	Printf(format string, v ...interface{})
+	Println(v ...interface{})
+}
+
 // StartServer listens on a TCP port or Unix socket and executes JSON-RPC commands
 func (r *JsRPC) StartServer(address string, useUnixSocket bool) error {
 	var listener net.Listener
@@ -23,8 +28,6 @@ func (r *JsRPC) StartServer(address string, useUnixSocket bool) error {
 		return fmt.Errorf("failed to listen on %s: %v", address, err)
 	}
 	defer listener.Close()
-
-	r.logger.Printf("Server listening on %s", address)
 
 	for {
 		conn, err := listener.Accept()

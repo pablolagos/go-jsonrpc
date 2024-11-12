@@ -3,30 +3,52 @@ package go_jsonrpc
 import (
 	"encoding/json"
 	"io"
-	"log"
 )
 
 type Context struct {
 	Method   string         // The method being executed
 	Params   any            // Params can be either an array or a map
+	ID       interface{}    // The ID of the JSON-RPC request
 	Response interface{}    // The response to be sent
 	writer   io.Writer      // Writer for the response
 	data     map[string]any // To store shared data between middleware and handlers
-	Logger   *log.Logger    // Logger available for handlers and middlewares
+	Logger   Logger         // Logger available for handlers and middlewares
 }
 
-// JSON writes a JSON response to the writer
-func (ctx *Context) JSON(data interface{}) error {
-	ctx.Response = data
-	return json.NewEncoder(ctx.writer).Encode(ctx.Response)
-}
-
-// Error writes an error response to the writer
-func (ctx *Context) Error(err error) error {
-	response := map[string]string{
-		"error": err.Error(),
+// JSON writes a JSON-RPC 2.0 response with the provided result
+func (ctx *Context) JSON(result interface{}) error {
+	response := JSONRPCResponse{
+		JSONRPC: "2.0",
+		Result:  result,
+		ID:      ctx.ID,
 	}
-	return ctx.JSON(response)
+	return json.NewEncoder(ctx.writer).Encode(response)
+}
+
+// Error writes a JSON-RPC 2.0 error response with a custom error code and error object
+func (ctx *Context) Error(code int, err error) error {
+	response := JSONRPCResponse{
+		JSONRPC: "2.0",
+		Error: &JSONRPCError{
+			Code:    code,
+			Message: err.Error(),
+		},
+		ID: ctx.ID,
+	}
+	return json.NewEncoder(ctx.writer).Encode(response)
+}
+
+// ErrorString writes a JSON-RPC 2.0 error response with a custom error code and a simple error message
+func (ctx *Context) ErrorString(code int, message string) error {
+	response := JSONRPCResponse{
+		JSONRPC: "2.0",
+		Error: &JSONRPCError{
+			Code:    code,
+			Message: message,
+		},
+		ID: ctx.ID,
+	}
+	return json.NewEncoder(ctx.writer).Encode(response)
 }
 
 // Bind binds the params to the provided destination struct
