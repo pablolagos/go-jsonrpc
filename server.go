@@ -58,17 +58,19 @@ func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 		return nil
 	}
 
-	command, exists := r.handlers[rpcRequest.Method]
-	if !exists {
-		r.logger.Printf("Method not found: %s", rpcRequest.Method)
-		return nil
-	}
-
 	ctx := &Context{
 		Method: rpcRequest.Method,
 		Params: rpcRequest.Params,
 		writer: writer,
 		Logger: r.logger,
+		ID:     rpcRequest.ID,
+	}
+
+	command, exists := r.handlers[rpcRequest.Method]
+	if !exists {
+		r.logger.Printf("Method not found: %s", rpcRequest.Method)
+		ctx.ErrorString(MethodNotFound, "method not found")
+		return nil
 	}
 
 	// Execute global middlewares
