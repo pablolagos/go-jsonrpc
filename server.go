@@ -95,5 +95,9 @@ func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 		return nil
 	}
 
+	// log if option is enabled
+	if r.options.LogRequests {
+		r.logger.Printf("Request: %v %#v", rpcRequest.Method, rpcRequest.Params)
+	}
 	return nil
 }

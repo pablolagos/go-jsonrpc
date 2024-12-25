@@ -13,6 +13,7 @@ type JsRPC struct {
 	middlewares []MiddlewareFunc // Global middlewares
 	cgi         bool             // Flag to write CGI headers
 	logger      Logger           // Logger for logging critical events
+	options     *Options
 }
 
 // HandlerFunc is the type definition for the function signature of a command handler.
@@ -33,6 +34,7 @@ func New(options *Options) *JsRPC {
 		handlers: make(map[string]command),
 		cgi:      options.CGI,
 		logger:   options.Logger,
+		options:  options,
 	}
 }
 
