@@ -51,6 +51,16 @@ func (r *JsRPC) handleConnection(conn net.Conn) {
 
 // ExecuteCommand reads from io.Reader, processes the JSON-RPC request, and writes the response to io.Writer
 func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
+	return r.executeCommandWithData(reader, writer, nil)
+}
+
+// ExecuteCommandWithData reads from io.Reader, processes the JSON-RPC request, and writes the response to io.Writer.
+// It also accepts a map of data that can be shared between middlewares and handlers through the data field in the context.
+func (r *JsRPC) ExecuteCommandWithData(reader io.Reader, writer io.Writer, data map[string]interface{}) error {
+	return r.executeCommandWithData(reader, writer, data)
+}
+
+func (r *JsRPC) executeCommandWithData(reader io.Reader, writer io.Writer, data map[string]interface{}) error {
 	var rpcRequest JSONRPCRequest
 
 	if err := json.NewDecoder(reader).Decode(&rpcRequest); err != nil {
@@ -64,11 +74,12 @@ func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 		writer: writer,
 		Logger: r.logger,
 		ID:     rpcRequest.ID,
+		data:   data,
 	}
 
-	command, exists := r.handlers[rpcRequest.Method]
+	cmd, exists := r.handlers[rpcRequest.Method]
 	if !exists {
-		r.logger.Printf("Method not found: %s", rpcRequest.Method)
+		r.logger.Printf("Command not found: %s", rpcRequest.Method)
 		ctx.ErrorString(MethodNotFound, "method not found")
 		return nil
 	}
@@ -82,7 +93,7 @@ func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 	}
 
 	// Execute command-specific middlewares
-	for _, middleware := range command.middlewares {
+	for _, middleware := range cmd.middlewares {
 		if err := middleware(ctx); err != nil {
 			// Stop execution if a command-specific middleware returns an error
 			return nil
@@ -90,7 +101,7 @@ func (r *JsRPC) ExecuteCommand(reader io.Reader, writer io.Writer) error {
 	}
 
 	// Execute handler and log any returned error
-	if err := command.handler(ctx); err != nil {
+	if err := cmd.handler(ctx); err != nil {
 		r.logger.Printf("Handler error: %v", err)
 		return nil
 	}
