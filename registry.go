@@ -47,6 +47,8 @@ func (r *JsRPC) RegisterCommand(commandName string, handler HandlerFunc, middlew
 }
 
 // UseGlobalMiddleware adds a global middleware that applies to all commands.
+// Global middlewares are executed before command-specific middlewares.
+// If a global middleware returns an error, the execution of the command is stopped.
 func (r *JsRPC) UseGlobalMiddleware(middleware MiddlewareFunc) {
 	r.middlewares = append(r.middlewares, middleware)
 }

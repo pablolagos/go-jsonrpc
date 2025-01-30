@@ -1,5 +1,5 @@
 GOLANGCI_LINT := $(GOPATH)/bin/golangci-lint
-GOLANGCI_LINT_VERSION := 1.60.3
+GOLANGCI_LINT_VERSION := 1.63.4
 
 # Ensure that the shell is bash.
 SHELL := /bin/bash
