@@ -26,9 +26,10 @@ type JSONRPCError struct {
 
 // Error codes according to JSON-RPC 2.0
 const (
-	ParseError     = -32700
-	InvalidRequest = -32600
-	MethodNotFound = -32601
-	InvalidParams  = -32602
-	InternalError  = -32603
+	ParseError       = -32700
+	InvalidRequest   = -32600
+	MethodNotFound   = -32601
+	InvalidParams    = -32602
+	InternalError    = -32603
+	InterceptorError = 32000
 )

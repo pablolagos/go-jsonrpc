@@ -238,6 +238,9 @@ func main() {
 }
 ```
 
+## Handler interceptors
+
+See [Interceptor](Interceptor.md) for more details on how to use handler interceptors to modify request handling, validate requests, or force responses.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

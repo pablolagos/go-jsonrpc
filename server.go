@@ -61,6 +61,19 @@ func (r *JsRPC) ExecuteCommandWithData(reader io.Reader, writer io.Writer, data 
 }
 
 func (r *JsRPC) executeCommandWithData(reader io.Reader, writer io.Writer, data map[string]interface{}) error {
+	// Intercept the request if a handler interceptor is defined
+	if r.options.HandlerInterceptor != nil {
+		finished, err := r.options.HandlerInterceptor(reader, writer)
+		if err != nil {
+			return fmt.Errorf("handler interceptor error: %v", err)
+		}
+		if finished {
+			// If the interceptor indicates that processing is finished, return early
+			return nil
+		}
+	}
+
+	// Decode the JSON-RPC request
 	var rpcRequest JSONRPCRequest
 
 	if err := json.NewDecoder(reader).Decode(&rpcRequest); err != nil {
@@ -80,7 +93,7 @@ func (r *JsRPC) executeCommandWithData(reader io.Reader, writer io.Writer, data 
 	cmd, exists := r.handlers[rpcRequest.Method]
 	if !exists {
 		r.logger.Printf("Command not found: %s", rpcRequest.Method)
-		ctx.ErrorString(MethodNotFound, "method not found")
+		_ = ctx.ErrorString(MethodNotFound, "method not found")
 		return nil
 	}
 
