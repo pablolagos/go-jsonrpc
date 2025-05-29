@@ -13,6 +13,7 @@ type Context struct {
 	writer   io.Writer      // Writer for the response
 	data     map[string]any // To store shared data between middleware and handlers
 	Logger   Logger         // Logger available for handlers and middlewares
+	cgi      bool           // Flag to control CGI header output
 }
 
 // JSON writes a JSON-RPC 2.0 response with the provided result
@@ -22,6 +23,14 @@ func (ctx *Context) JSON(result interface{}) error {
 		Result:  result,
 		ID:      ctx.ID,
 	}
+
+	// Write CGI headers if running in CGI mode
+	if ctx.cgi {
+		if _, err := ctx.writer.Write([]byte("Content-Type: application/json\r\n\r\n")); err != nil {
+			return err
+		}
+	}
+
 	return json.NewEncoder(ctx.writer).Encode(response)
 }
 
@@ -35,6 +44,14 @@ func (ctx *Context) Error(code int, err error) error {
 		},
 		ID: ctx.ID,
 	}
+
+	// Write CGI headers if running in CGI mode
+	if ctx.cgi {
+		if _, err := ctx.writer.Write([]byte("Content-Type: application/json\r\n\r\n")); err != nil {
+			return err
+		}
+	}
+
 	return json.NewEncoder(ctx.writer).Encode(response)
 }
 
@@ -48,6 +65,14 @@ func (ctx *Context) ErrorString(code int, message string) error {
 		},
 		ID: ctx.ID,
 	}
+
+	// Write CGI headers if running in CGI mode
+	if ctx.cgi {
+		if _, err := ctx.writer.Write([]byte("Content-Type: application/json\r\n\r\n")); err != nil {
+			return err
+		}
+	}
+
 	return json.NewEncoder(ctx.writer).Encode(response)
 }
 

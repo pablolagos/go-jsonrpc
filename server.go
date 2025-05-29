@@ -88,6 +88,7 @@ func (r *JsRPC) executeCommandWithData(reader io.Reader, writer io.Writer, data 
 		Logger: r.logger,
 		ID:     rpcRequest.ID,
 		data:   data,
+		cgi:    r.cgi,
 	}
 
 	cmd, exists := r.handlers[rpcRequest.Method]
