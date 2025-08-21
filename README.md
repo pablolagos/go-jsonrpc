@@ -241,6 +241,33 @@ func main() {
 ## Handler interceptors
 
 See [Interceptor](Interceptor.md) for more details on how to use handler interceptors to modify request handling, validate requests, or force responses.
+
+## HTTPS Client Example
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/pablolagos/go-jsonrpc/jclient"
+)
+
+func main() {
+	client := jclient.NewHTTPClient("https://localhost:8443/api", jclient.HTTPClientOptions{Insecure: false, Timeout: 15 * time.Second}) // true = skip TLS verify
+
+	var result map[string]interface{}
+	err := client.Call("ping", map[string]string{"msg": "hello"}, &result)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Response:", result)
+}
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
