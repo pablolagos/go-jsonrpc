@@ -1,9 +1,9 @@
 package jclient
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"time"
 )
@@ -14,11 +14,15 @@ type TCPClient struct {
 	timeout time.Duration
 }
 
+type TCPClientOpts struct {
+	Timeout time.Duration // Timeout for the client
+}
+
 // NewTCPClient creates a new JSON-RPC TCP client
-func NewTCPClient(addr string, timeout time.Duration) *TCPClient {
+func NewTCPClient(addr string, opts TCPClientOpts) *TCPClient {
 	return &TCPClient{
 		addr:    addr,
-		timeout: timeout,
+		timeout: opts.Timeout,
 	}
 }
 
@@ -35,7 +39,6 @@ func (c *TCPClient) Call(method string, params interface{}, result interface{}) 
 	if err != nil {
 		return fmt.Errorf("marshal request: %w", err)
 	}
-	data = append(data, '\n') // newline as message delimiter
 
 	// connect
 	conn, err := net.DialTimeout("tcp", c.addr, c.timeout)
@@ -60,7 +63,7 @@ func (c *TCPClient) Call(method string, params interface{}, result interface{}) 
 		return fmt.Errorf("set read deadline: %w", err)
 	}
 
-	respBytes, err := bufio.NewReader(conn).ReadBytes('\n')
+	respBytes, err := io.ReadAll(conn)
 	if err != nil {
 		return fmt.Errorf("read: %w", err)
 	}

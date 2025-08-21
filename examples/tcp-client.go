@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	client := jclient.NewTCPClient("127.0.0.1:9000", 5*time.Second)
+	client := jclient.NewTCPClient("127.0.0.1:9000", jclient.TCPClientOpts{Timeout: 5 * time.Second})
 
 	var result map[string]interface{}
 	err := client.Call("ping", map[string]string{"msg": "hello"}, &result)
