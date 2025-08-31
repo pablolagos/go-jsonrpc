@@ -202,3 +202,26 @@ func (ctx *Context) GetParamStringArray(name string) []string {
 	}
 	return []string{}
 }
+
+func (ctx *Context) GetParamMapStringAny(name string) any {
+	if paramsMap, ok := ctx.Params.(map[string]interface{}); ok {
+		if val, found := paramsMap[name]; found {
+			if mapVal, ok := val.(map[string]interface{}); ok {
+				return mapVal
+			}
+		}
+	}
+	return nil
+}
+
+// GetParamRawJson retrieves the raw JSON of a parameter by name, or returns nil if not found or on error
+func (ctx *Context) GetParamRawJson(name string) json.RawMessage {
+	if paramsMap, ok := ctx.Params.(map[string]interface{}); ok {
+		if val, found := paramsMap[name]; found {
+			if rawJson, err := json.Marshal(val); err == nil {
+				return json.RawMessage(rawJson)
+			}
+		}
+	}
+	return nil
+}
