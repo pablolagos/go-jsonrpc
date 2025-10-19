@@ -34,10 +34,11 @@ func New(options *Options) *JsRPC {
 		options.Logger = DefaultOptions().Logger
 	}
 	return &JsRPC{
-		handlers: make(map[string]command),
-		cgi:      options.CGI,
-		logger:   options.Logger,
-		options:  options,
+		handlers:    make(map[string]command),
+		cgi:         options.CGI,
+		logger:      options.Logger,
+		options:     options,
+		socketPerms: options.SocketPerms,
 	}
 }
 

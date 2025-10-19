@@ -13,6 +13,7 @@ type Options struct {
 	Logger             Logger // Logger for logging events
 	LogRequests        bool   // Flag to log requests
 	HandlerInterceptor func(reader io.Reader, writer io.Writer) (finished bool, err error)
+	SocketPerms        os.FileMode // File permissions for Unix socket when used. 0 means no change.
 }
 
 // DefaultOptions provides default configuration for JsRPC
@@ -21,5 +22,6 @@ func DefaultOptions() *Options {
 		CGI:         true,
 		Logger:      log.New(os.Stdout, "JsRPC: ", log.LstdFlags), // Default logger
 		LogRequests: false,
+		SocketPerms: 0, // No permission change by default
 	}
 }
