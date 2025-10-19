@@ -3,6 +3,7 @@ package go_jsonrpc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -33,12 +34,24 @@ func (r *JsRPC) StartServer(address string, useUnixSocket bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %v", address, err)
 	}
-	defer listener.Close()
+
+	return r.StartWithListener(listener)
+}
+
+// StartWithListener starts the JSON-RPC server with a given net.Listener
+// This function blocks execution.
+func (r *JsRPC) StartWithListener(listener net.Listener) error {
+	if listener == nil {
+		return fmt.Errorf("listener must not be nil")
+	}
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			r.logger.Printf("Failed to accept connection: %v", err)
+			if errors.Is(err, net.ErrClosed) {
+				return nil // Listener closed, exit gracefully
+			}
 			continue
 		}
 		go r.handleConnection(conn)
