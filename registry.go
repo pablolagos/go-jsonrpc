@@ -1,6 +1,8 @@
 // registry.go
 package go_jsonrpc
 
+import "os"
+
 // command represents a registered command with its handler and specific middlewares.
 type command struct {
 	handler     HandlerFunc
@@ -14,6 +16,7 @@ type JsRPC struct {
 	cgi         bool             // Flag to write CGI headers
 	logger      Logger           // Logger for logging critical events
 	options     *Options
+	socketPerms os.FileMode
 }
 
 // HandlerFunc is the type definition for the function signature of a command handler.

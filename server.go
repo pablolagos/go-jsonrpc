@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 )
 
 type Logger interface {
@@ -21,6 +22,11 @@ func (r *JsRPC) StartServer(address string, useUnixSocket bool) error {
 	// Select TCP or Unix socket based on the configuration
 	if useUnixSocket {
 		listener, err = net.Listen("unix", address)
+		if r.socketPerms != 0 {
+			if err := os.Chmod(address, r.socketPerms); err != nil {
+				return fmt.Errorf("failed to set permissions on unix socket %s: %v", address, err)
+			}
+		}
 	} else {
 		listener, err = net.Listen("tcp", address)
 	}
