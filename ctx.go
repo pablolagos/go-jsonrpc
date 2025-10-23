@@ -2,6 +2,7 @@ package go_jsonrpc
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 )
 
@@ -224,4 +225,35 @@ func (ctx *Context) GetParamRawJson(name string) json.RawMessage {
 		}
 	}
 	return nil
+}
+
+// GetStructParam tries to obtain the parameter 'name' and deserialize it into 'dst'.
+// Returns ok=false if the parameter does not exist. If it exists but unmarshal fails, returns an error.
+func (ctx *Context) GetStructParam(name string, dst any) (bool, error) {
+	// validate input
+	if dst == nil {
+		return false, errors.New("dst must be a non-nil pointer")
+	}
+
+	// params must be an object
+	paramsMap, ok := ctx.Params.(map[string]interface{})
+	if !ok || paramsMap == nil {
+		return false, errors.New("params is not an object")
+	}
+
+	// find the parameter
+	val, found := paramsMap[name]
+	if !found {
+		return false, nil
+	}
+
+	// marshal and unmarshal into destination
+	b, err := json.Marshal(val)
+	if err != nil {
+		return false, err
+	}
+	if err := json.Unmarshal(b, dst); err != nil {
+		return false, err
+	}
+	return true, nil
 }
